@@ -1,88 +1,113 @@
 "use client";
 
-import { useSession } from "@/lib/auth-client";
-import Link from "next/link";
+import { useState } from "react";
+import { useRouter } from "next/navigation";
+import toast from "react-hot-toast";
+import { useSession, signOut, updateUser } from "@/lib/auth-client";
 
 export default function ProfilePage() {
   const { data: session, isPending } = useSession();
+  const [saving, setSaving] = useState(false);
+  const router = useRouter();
 
   if (isPending) {
     return (
       <div className="min-h-[60vh] flex items-center justify-center">
-        <span className="loading loading-spinner loading-lg text-green-600"></span>
+        <span className="loading loading-spinner loading-md" />
       </div>
     );
   }
 
-  if (!session) {
-    return (
-      <div className="min-h-[60vh] flex flex-col items-center justify-center">
-        <p className="text-gray-500 mb-4">আপনি লগইন করেননি</p>
-        <Link href="/signin" className="btn btn-success text-white">
-          সাইন ইন করুন
-        </Link>
-      </div>
-    );
+  const user = session?.user;
+  if (!user) {
+    router.push("/signin?callbackURL=/profile");
+    return null;
   }
+
+  const handleSignOut = () =>
+    signOut({
+      fetchOptions: {
+        onSuccess: () => {
+          toast.success("সাইন আউট সফল হয়েছে!");
+          router.push("/");
+          router.refresh();
+        },
+      },
+    });
+
+  const handleUpdate = async (e: React.FormEvent<HTMLFormElement>) => {
+    e.preventDefault();
+    const name = String(new FormData(e.currentTarget).get("name")).trim();
+    if (!name) return toast.error("নাম খালি রাখা যাবে না!");
+
+    setSaving(true);
+    const { error } = await updateUser({ name });
+    setSaving(false);
+
+    if (error) return toast.error(error.message || "আপডেট ব্যর্থ হয়েছে!");
+    toast.success("প্রোফাইল আপডেট হয়েছে!");
+    router.refresh();
+  };
 
   return (
-    <div className="max-w-2xl mx-auto px-4 py-8">
-      <h1 className="text-2xl font-bold text-gray-800 mb-6">আমার প্রোফাইল</h1>
+    <div className="max-w-2xl mx-auto px-4 py-10">
+      <h1 className="text-2xl font-bold text-gray-800">আমার প্রোফাইল</h1>
+      <p className="text-gray-500 text-sm mt-1 mb-5">
+        আপনার অ্যাকাউন্টের তথ্য এখানে দেখুন।
+      </p>
 
-      <div className="card bg-white border shadow">
-        <div className="card-body">
-          {/* Avatar */}
-          <div className="flex items-center gap-4 mb-6">
-            <div className="avatar placeholder">
-              <div className="bg-green-100 text-green-700 rounded-full w-16">
-                <span className="text-2xl">
-                  {session.user.image ? (
-                    <img
-                      src={session.user.image}
-                      alt={session.user.name}
-                      className="rounded-full"
-                    />
-                  ) : (
-                    session.user.name?.charAt(0) || "U"
-                  )}
-                </span>
-              </div>
-            </div>
-            <div>
-              <h2 className="text-xl font-semibold text-gray-800">
-                {session.user.name}
-              </h2>
-              <p className="text-gray-500">{session.user.email}</p>
-            </div>
+      {/* Profile card */}
+      <div className="bg-white border rounded-xl p-4 flex items-center gap-4">
+        {user.image ? (
+          // eslint-disable-next-line @next/next/no-img-element
+          <img src={user.image} alt={user.name} className="w-14 h-14 rounded-lg object-cover" />
+        ) : (
+          <div className="w-14 h-14 rounded-lg bg-green-600 text-white flex items-center justify-center text-xl font-bold">
+            {user.name.charAt(0).toUpperCase()}
           </div>
+        )}
 
-          {/* User Info */}
-          <div className="space-y-4">
-            <div className="flex items-center justify-between p-3 bg-gray-50 rounded-lg">
-              <div>
-                <p className="text-sm text-gray-500">নাম</p>
-                <p className="font-medium">{session.user.name}</p>
-              </div>
-            </div>
-
-            <div className="flex items-center justify-between p-3 bg-gray-50 rounded-lg">
-              <div>
-                <p className="text-sm text-gray-500">ইমেইল</p>
-                <p className="font-medium">{session.user.email}</p>
-              </div>
-            </div>
-          </div>
-
-          {/* Update Button */}
-          <div className="mt-6">
-            <Link
-              href="/profile/update"
-              className="btn btn-success text-white w-full"
-            >
-              ✏️ তথ্য আপডেট করুন
-            </Link>
-          </div>
+        <div className="flex-1 min-w-0">
+          <p className="font-semibold text-gray-800 truncate">{user.name}</p>
+          <p className="text-sm text-gray-500 truncate">{user.email}</p>
         </div>
+
+        <button
+          onClick={handleSignOut}
+          className="btn btn-sm btn-outline btn-error"
+        >
+          সাইন আউট
+        </button>
+      </div>
+
+      {/* Info form */}
+      <div className="bg-white border rounded-xl p-5 mt-4">
+        <h2 className="font-semibold text-gray-800 mb-3">তথ্য</h2>
+
+        <form onSubmit={handleUpdate} className="space-y-3" key={user.name}>
+          <label className="form-control">
+            <span className="label-text font-medium text-gray-700">নাম</span>
+            <input
+              name="name"
+              type="text"
+              defaultValue={user.name}
+              className="input input-bordered w-full bg-white"
+              required
+            />
+          </label>
+
+          <button
+            type="submit"
+            className="btn btn-success text-white w-full"
+            disabled={saving}
+          >
+            {saving ? (
+              <span className="loading loading-spinner loading-sm" />
+            ) : (
+              "আপডেট"
+            )}
+          </button>
+        </form>
       </div>
     </div>
   );
