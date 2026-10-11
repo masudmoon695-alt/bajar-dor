@@ -7,12 +7,12 @@ import toast from "react-hot-toast";
 import Link from "next/link";
 
 export default function UpdateProfilePage() {
-  const { data: session, isPending } = useSession();
+  const { data: session, isPending, refetch } = useSession();
   const [name, setName] = useState("");
   const [loading, setLoading] = useState(false);
   const router = useRouter();
 
-  // session load হলে name সেট করো
+  // session load hole name set koro
   useEffect(() => {
     if (session?.user?.name) {
       setName(session.user.name);
@@ -23,18 +23,19 @@ export default function UpdateProfilePage() {
     e.preventDefault();
     setLoading(true);
 
-    // BetterAuth documentation অনুযায়ী updateUser ব্যবহার করো
-    // https://better-auth.com/docs/concepts/users-accounts#update-user
-    const { data, error } = await authClient.updateUser({
-      name: name,
-    });
+    const { error } = await authClient.updateUser({ name: name.trim() });
 
     if (error) {
+      console.error("updateUser error:", error);
       toast.error(error.message || "আপডেট ব্যর্থ হয়েছে!");
-    } else {
-      toast.success("প্রোফাইল সফলভাবে আপডেট হয়েছে! 🎉");
-      router.push("/profile");
+      setLoading(false);
+      return;
     }
+
+    await refetch(); // Navbar ar profile e notun naam dekhanor jonno
+    toast.success("প্রোফাইল সফলভাবে আপডেট হয়েছে! 🎉");
+    router.push("/profile");
+    router.refresh();
     setLoading(false);
   };
 
@@ -80,10 +81,7 @@ export default function UpdateProfilePage() {
             </button>
           </form>
 
-          <Link
-            href="/profile"
-            className="btn btn-ghost w-full mt-2"
-          >
+          <Link href="/profile" className="btn btn-ghost w-full mt-2">
             ← প্রোফাইলে ফিরে যান
           </Link>
         </div>

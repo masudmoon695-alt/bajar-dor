@@ -6,7 +6,7 @@ import toast from "react-hot-toast";
 import { useSession, signOut, updateUser } from "@/lib/auth-client";
 
 export default function ProfilePage() {
-  const { data: session, isPending } = useSession();
+  const { data: session, isPending, refetch } = useSession();
   const [saving, setSaving] = useState(false);
   const router = useRouter();
 
@@ -42,9 +42,15 @@ export default function ProfilePage() {
 
     setSaving(true);
     const { error } = await updateUser({ name });
-    setSaving(false);
 
-    if (error) return toast.error(error.message || "আপডেট ব্যর্থ হয়েছে!");
+    if (error) {
+      setSaving(false);
+      console.error("updateUser error:", error);
+      return toast.error(error.message || "আপডেট ব্যর্থ হয়েছে!");
+    }
+
+    await refetch();
+    setSaving(false);
     toast.success("প্রোফাইল আপডেট হয়েছে!");
     router.refresh();
   };
