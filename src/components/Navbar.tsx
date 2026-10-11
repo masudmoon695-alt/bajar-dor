@@ -1,7 +1,7 @@
 "use client";
 
 import Link from "next/link";
-import { useEffect, useState } from "react";
+import { useEffect, useState, useSyncExternalStore } from "react";
 import { useSession, signOut } from "@/lib/auth-client";
 import { usePathname, useRouter } from "next/navigation";
 import toast from "react-hot-toast";
@@ -14,6 +14,13 @@ export default function Navbar() {
   const router = useRouter();
   const [categories, setCategories] = useState<Category[]>([]);
   const [mobileMenuOpen, setMobileMenuOpen] = useState(false);
+
+  // tarikh browser e ber hobe, build er shomoy na
+  const banglaDate = useSyncExternalStore(
+    () => () => {},
+    getBanglaDate, // browser e
+    () => "" // server e (khali)
+  );
 
   useEffect(() => {
     fetch("https://api.api-store.workers.dev/api/bazardor/categories")
@@ -28,6 +35,7 @@ export default function Navbar() {
         onSuccess: () => {
           toast.success("সাইন আউট সফল হয়েছে!");
           router.push("/");
+          router.refresh();
         },
       },
     });
@@ -44,7 +52,7 @@ export default function Navbar() {
             <h1 className="text-xl font-bold text-green-700 leading-tight">
               বাজার দর
             </h1>
-            <p className="text-xs text-gray-500">{getBanglaDate()}</p>
+            <p className="text-xs text-gray-500 min-h-4">{banglaDate}</p>
           </div>
         </Link>
 

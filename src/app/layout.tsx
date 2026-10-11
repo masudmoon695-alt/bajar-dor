@@ -1,4 +1,5 @@
 import type { Metadata } from "next";
+import { Suspense } from "react";
 import { Hind_Siliguri } from "next/font/google";
 import "./globals.css";
 import Navbar from "@/components/Navbar";
@@ -24,7 +25,9 @@ export default function RootLayout({
   return (
     <html lang="bn" data-theme="light">
       <body className={`${hindSiliguri.className} antialiased`}>
-        <Navbar />
+        <Suspense fallback={<div className="h-32 bg-white shadow-sm" />}>
+          <Navbar />
+        </Suspense>
         <main className="min-h-screen">{children}</main>
         <Footer />
         <Toaster position="top-center" reverseOrder={false} />
