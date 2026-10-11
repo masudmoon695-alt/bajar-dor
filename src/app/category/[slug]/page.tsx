@@ -2,9 +2,9 @@
 
 import { useEffect, useState } from "react";
 import { useParams } from "next/navigation";
-import ProductCard from "@/components/ProductCard";
-import SortDropdown from "@/components/SortDropdown";
-import { type Product, type Category } from "@/lib/utils";
+import ProductCard from "@/app/components/ProductCard";
+import SortDropdown from "@/app/components/SortDropdown";
+import { type Product, type Category } from "@/app/lib/utils";
 import Link from "next/link";
 
 export default function CategoryPage() {
